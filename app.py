@@ -135,7 +135,7 @@ st.session_state['sel_GPTVectorStoreIndex'] = selector.get_selection_value(butto
 # selector.get_selection_value(button, 'text_input_ytb_link_disabled')
 
 # >>> Title
-st.title("Youtube transcript OpenAI Assitant")
+st.title("Youtube transcript OpenAI Assistant")
 # st.write(time.strftime('%Y-%m-%d %H:%M:%S'))
 add_vertical_space(1)
 # <<< Title
