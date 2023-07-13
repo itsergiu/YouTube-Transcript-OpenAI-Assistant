@@ -3,5 +3,5 @@ streamlit-chat
 streamlit-extras
 openai
 langchain
-llama-index==0.7.6
+llama-index==0.6.30
 
