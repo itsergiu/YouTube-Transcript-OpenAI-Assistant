@@ -157,7 +157,7 @@ with st.sidebar:
 
     clear_button = st.button("Clear Chat", key="clear", on_click=f_clear_button)
     add_vertical_space(1)
-    st.markdown('📖 Read the [blog](https://people.sap.com/iatco.sergiu#content:blogposts)')
+    st.markdown('📖 Read the [blog](https://blogs.sap.com/2023/07/14/building-trust-in-ai-youtube-transcript-openai-assistant/)')
 # <<< sidebar
 try:
     st.video(youtube_link, start_time=0)
