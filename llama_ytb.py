@@ -2,6 +2,7 @@ import os
 from llama_index import GPTVectorStoreIndex
 from llama_index import StorageContext, load_index_from_storage
 # from llama_index import download_loader
+# https://llamahub.ai/l/youtube_transcript
 from llama_hub.youtube_transcript.base import YoutubeTranscriptReader
 
 
