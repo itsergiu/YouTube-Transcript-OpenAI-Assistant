@@ -1,7 +1,9 @@
 import os
 from llama_index import GPTVectorStoreIndex
 from llama_index import StorageContext, load_index_from_storage
-from llama_index import download_loader
+# from llama_index import download_loader
+from llama_hub.youtube_transcript.base import YoutubeTranscriptReader
+
 
 import logging
 import sys
@@ -57,8 +59,9 @@ class LlamaContext:
         self.total_cost_davinci = None
 
     def extract_ytb(self):
-        youtube_transcript_reader = download_loader("YoutubeTranscriptReader")
-        loader = youtube_transcript_reader()
+        # youtube_transcript_reader = download_loader("YoutubeTranscriptReader")
+        # loader = youtube_transcript_reader()
+        loader = YoutubeTranscriptReader()
         try:
             self.documents = loader.load_data(ytlinks=[self.ytb_link])
             self.ytb_content = self.documents[0].text
