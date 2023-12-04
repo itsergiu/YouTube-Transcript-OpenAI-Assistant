@@ -1,7 +1,7 @@
 streamlit
 streamlit-chat 
 streamlit-extras
-openai
+openai==0.28
 langchain
 llama-index
 llama_hub
