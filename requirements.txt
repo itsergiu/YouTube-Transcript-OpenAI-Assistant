@@ -2,8 +2,8 @@ streamlit
 streamlit-chat 
 streamlit-extras
 openai==0.28
-langchain ==0.1.16
-llama-index ==0.7.5
+langchain==0.1.16
+llama-index==0.7.5
 llama_hub==0.0.12
 youtube_transcript_api==0.6.1
 
