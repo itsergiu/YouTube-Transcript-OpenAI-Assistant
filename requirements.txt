@@ -2,7 +2,7 @@ streamlit
 streamlit-chat 
 streamlit-extras
 openai==0.28
-langchain==0.2.0
+langchain==0.1.8
 llama-index
 llama_hub
 youtube_transcript_api
