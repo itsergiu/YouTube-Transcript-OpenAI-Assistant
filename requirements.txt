@@ -2,6 +2,7 @@ streamlit
 streamlit-chat 
 streamlit-extras
 openai==0.28
+langchain_community
 langchain==0.3.14
 llama-index
 llama_hub
