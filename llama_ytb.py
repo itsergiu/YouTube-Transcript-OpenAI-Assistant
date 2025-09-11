@@ -3,8 +3,8 @@ from llama_index import GPTVectorStoreIndex
 from llama_index import StorageContext, load_index_from_storage
 # from llama_index import download_loader
 # https://llamahub.ai/l/youtube_transcript
-from llama_hub.youtube_transcript.base import YoutubeTranscriptReader
-
+# from llama_hub.youtube_transcript.base import YoutubeTranscriptReader
+from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
 
 import logging
 import sys
@@ -128,3 +128,4 @@ class LlamaContext:
         self.total_tokens = total_tokens
         self.total_cost_ada = total_cost_ada
         self.total_cost_davinci = total_cost_davinci
+
