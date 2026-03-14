@@ -1,11 +1,19 @@
 import streamlit as st
 import utility_settings as util_set  # Python file with utilities
-from llama_ytb import LlamaContext  # Python file with utilities
 from streamlit_chat import message
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.add_vertical_space import add_vertical_space
 import os
 import time
+import traceback
+
+
+def f_get_llama_context():
+    try:
+        from llama_ytb import LlamaContext  # Python file with utilities
+        return LlamaContext, None
+    except Exception as exc:
+        return None, ''.join(traceback.format_exception_only(type(exc), exc)).strip()
 
 
 def f_init_session():
@@ -30,9 +38,16 @@ def f_init_session():
         st.session_state['billed_status'] = ''
     if 'index_status' not in st.session_state:
         st.session_state['index_status'] = 'Index is empty.'
+    if 'llama_import_error' not in st.session_state:
+        st.session_state['llama_import_error'] = None
 
 
 def f_extract_text(_youtube_link):
+    LlamaContext, import_error = f_get_llama_context()
+    if import_error is not None:
+        st.session_state['llama_import_error'] = import_error
+        return
+
     if st.session_state['sel_GPTVectorStoreIndex']:
         path = st.session_state['sel_path'] + st.session_state['sel_ytb_name']
     else:
@@ -85,6 +100,9 @@ def f_validate_password(_api_key):
 
 def f_embed_button():
     if st.session_state['openai_api_key_valid']:  # password valid
+        if st.session_state['llama_import_error'] is not None:
+            return
+
         lct = st.session_state['lct']
 
         if st.session_state['sel_GPTVectorStoreIndex']:
@@ -117,6 +135,8 @@ def f_download_button_chat():
 
 
 f_init_session()
+_, import_error = f_get_llama_context()
+st.session_state['llama_import_error'] = import_error
 
 selector = util_set.SelectionValueGetter(util_set.data)
 button = st.sidebar.selectbox("Select an option", selector.buttons)
@@ -159,6 +179,9 @@ with st.sidebar:
     add_vertical_space(1)
     st.markdown('📖 Read the [blog](https://blogs.sap.com/2023/07/14/building-trust-in-ai-youtube-transcript-openai-assistant/)')
 # <<< sidebar
+if st.session_state['llama_import_error'] is not None:
+    st.error(f"LlamaIndex import failed: {st.session_state['llama_import_error']}")
+
 try:
     st.video(youtube_link, start_time=0)
     st.session_state['youtube_link_valid'] = True
