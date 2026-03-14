@@ -40,6 +40,8 @@ def f_init_session():
         st.session_state['index_status'] = 'Index is empty.'
     if 'llama_import_error' not in st.session_state:
         st.session_state['llama_import_error'] = None
+    if 'ytb_extract_error' not in st.session_state:
+        st.session_state['ytb_extract_error'] = None
 
 
 def f_extract_text(_youtube_link):
@@ -57,6 +59,7 @@ def f_extract_text(_youtube_link):
     lct.extract_ytb()
     st.session_state['ytb_content'] = lct.ytb_content
     st.session_state['ytb_content_valid'] = lct.ytb_content_valid
+    st.session_state['ytb_extract_error'] = lct.extract_error
     st.session_state['lct'] = lct
     st.session_state['embedded'] = False  # Embed Transcript status
     st.session_state['index_status'] = 'Index is empty.'
@@ -194,6 +197,8 @@ st.button("Extract transcript", on_click=f_extract_text, args=(youtube_link,), k
           disabled=not (st.session_state['youtube_link_valid']))
 
 content_txt = st.text_area("Transcript", height=300, value=st.session_state['ytb_content'], disabled=True)
+if st.session_state['ytb_extract_error'] is not None:
+    st.warning(st.session_state['ytb_extract_error'])
 
 file_data = content_txt.encode("utf-8")
 file_name_transcript = f"transcript_{time.strftime('%Y-%m-%d_%H-%M-%S')}.txt"
