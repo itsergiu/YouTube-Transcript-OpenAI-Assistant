@@ -94,8 +94,8 @@ class LlamaContext:
             return
 
         try:
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            transcript_text = " ".join(item["text"] for item in transcript).strip()
+            transcript = self._fetch_transcript(video_id)
+            transcript_text = self._transcript_to_text(transcript)
 
             if transcript_text:
                 self.documents = [Document(text=transcript_text)]
@@ -117,6 +117,32 @@ class LlamaContext:
             self.ytb_content = "Can't extract text from link!"
             self.ytb_content_valid = False
             self.extract_error = str(exc)
+
+    def _fetch_transcript(self, video_id):
+        if hasattr(YouTubeTranscriptApi, "get_transcript"):
+            return YouTubeTranscriptApi.get_transcript(video_id)
+
+        api = YouTubeTranscriptApi()
+
+        if hasattr(api, "fetch"):
+            return api.fetch(video_id)
+
+        if hasattr(api, "get_transcript"):
+            return api.get_transcript(video_id)
+
+        raise AttributeError("Unsupported youtube_transcript_api version.")
+
+    def _transcript_to_text(self, transcript):
+        if transcript is None:
+            return ""
+
+        if isinstance(transcript, list):
+            return " ".join(item.get("text", "") for item in transcript).strip()
+
+        if hasattr(transcript, "snippets"):
+            return " ".join(getattr(item, "text", "") for item in transcript.snippets).strip()
+
+        return str(transcript).strip()
 
     def create_vector_store(self):
         if self.documents is not None:
