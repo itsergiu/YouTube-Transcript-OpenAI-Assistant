@@ -1,11 +1,18 @@
 import os
 from llama_index import GPTVectorStoreIndex
 from llama_index import StorageContext, load_index_from_storage
+from llama_index import Document
 # from llama_index import download_loader
 # https://llamahub.ai/l/youtube_transcript
 # from llama_hub.youtube_transcript.base import YoutubeTranscriptReader
 # https://llamahub.ai/l/readers/llama-index-readers-youtube-transcript
-from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api._errors import (
+    NoTranscriptFound,
+    TranscriptsDisabled,
+    VideoUnavailable,
+)
+from urllib.parse import parse_qs, urlparse
 
 import logging
 import sys
@@ -59,21 +66,57 @@ class LlamaContext:
         self.total_tokens = None
         self.total_cost_ada = None
         self.total_cost_davinci = None
+        self.extract_error = None
+
+    def _get_video_id(self):
+        parsed_url = urlparse(self.ytb_link)
+        hostname = parsed_url.hostname or ""
+
+        if hostname in {"youtu.be", "www.youtu.be"}:
+            return parsed_url.path.lstrip("/")
+
+        if hostname in {"youtube.com", "www.youtube.com", "m.youtube.com"}:
+            if parsed_url.path == "/watch":
+                return parse_qs(parsed_url.query).get("v", [None])[0]
+            if parsed_url.path.startswith("/shorts/"):
+                return parsed_url.path.split("/shorts/", 1)[1].split("/", 1)[0]
+            if parsed_url.path.startswith("/embed/"):
+                return parsed_url.path.split("/embed/", 1)[1].split("/", 1)[0]
+
+        return None
 
     def extract_ytb(self):
-        # youtube_transcript_reader = download_loader("YoutubeTranscriptReader")
-        # loader = youtube_transcript_reader()
-        loader = YoutubeTranscriptReader()
+        video_id = self._get_video_id()
+        if not video_id:
+            self.ytb_content = "Invalid YouTube link."
+            self.ytb_content_valid = False
+            self.extract_error = "Could not parse a YouTube video ID from the link."
+            return
+
         try:
-            self.documents = loader.load_data(ytlinks=[self.ytb_link])
-            self.ytb_content = self.documents[0].text
-            if self.documents is not None:
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            transcript_text = " ".join(item["text"] for item in transcript).strip()
+
+            if transcript_text:
+                self.documents = [Document(text=transcript_text)]
+                self.ytb_content = transcript_text
                 self.ytb_content_valid = True
+                self.extract_error = None
             else:
+                self.documents = None
+                self.ytb_content = "Transcript is empty."
                 self.ytb_content_valid = False
-        except:
+                self.extract_error = "The transcript API returned no text."
+        except (NoTranscriptFound, TranscriptsDisabled, VideoUnavailable) as exc:
+            self.documents = None
             self.ytb_content = "Can't extract text from link!"
             self.ytb_content_valid = False
+            self.extract_error = str(exc)
+        except Exception as exc:
+            self.documents = None
+            self.ytb_content = "Can't extract text from link!"
+            self.ytb_content_valid = False
+            self.extract_error = str(exc)
 
     def create_vector_store(self):
         if self.documents is not None:
