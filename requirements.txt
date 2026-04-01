@@ -5,7 +5,6 @@ openai==0.28
 langchain_community==0.3.14
 langchain==0.3.14
 llama-index==0.8.42
-llama_hub==0.0.61
 youtube_transcript_api==0.6.2
 setuptools==70.0.0
 
