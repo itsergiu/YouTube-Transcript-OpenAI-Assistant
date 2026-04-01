@@ -1,4 +1,9 @@
 import py_compile
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
 
 import utility_settings
 from llama_ytb import LlamaContext
@@ -11,7 +16,7 @@ def assert_video_id(url: str, expected: str) -> None:
 
 
 def main() -> None:
-    py_compile.compile("app.py", doraise=True)
+    py_compile.compile(str(REPO_ROOT / "app.py"), doraise=True)
     assert callable(utility_settings.openai_psw_check)
 
     context = LlamaContext(ytb_link="https://www.youtube.com/watch?v=dQw4w9WgXcQ", path="")
