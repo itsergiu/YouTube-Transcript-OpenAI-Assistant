@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
+    ignore:
+      - dependency-name: "llama-index"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "llama_hub"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "langchain"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "langchain_community"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "streamlit"
+        update-types:
+          - "version-update:semver-major"
