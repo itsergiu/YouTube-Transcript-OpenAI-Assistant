@@ -1,11 +1,7 @@
 import os
-from llama_index import GPTVectorStoreIndex
-from llama_index import StorageContext, load_index_from_storage
-from llama_index import Document
-# from llama_index import download_loader
-# https://llamahub.ai/l/youtube_transcript
-# from llama_hub.youtube_transcript.base import YoutubeTranscriptReader
-# https://llamahub.ai/l/readers/llama-index-readers-youtube-transcript
+from llama_index.core import Document, Settings, StorageContext, VectorStoreIndex, load_index_from_storage
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.llms.openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import (
     NoTranscriptFound,
@@ -33,12 +29,7 @@ logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 class LlamaContext:
     def __init__(self, ytb_link, path=None, ):
-        self.path = path if path is not None else None
-        #
-        # if path!=None:
-        #     self.path = path
-        # else:
-        #     self.path = ''
+        self.path = path if path is not None else ""
 
         persist_sub_dir = "storage"
         self.persist_dir = os.path.join(self.path, persist_sub_dir)
@@ -67,6 +58,9 @@ class LlamaContext:
         self.total_cost_ada = None
         self.total_cost_davinci = None
         self.extract_error = None
+
+        Settings.llm = OpenAI(model="gpt-4o-mini")
+        Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
 
     def _get_video_id(self):
         parsed_url = urlparse(self.ytb_link)
@@ -146,17 +140,47 @@ class LlamaContext:
 
     def create_vector_store(self):
         if self.documents is not None:
-            self.index = GPTVectorStoreIndex.from_documents(self.documents)
-            # self.index_size = sys.getsizeof(self.index.vector_store.to_dict())
-            # print("GPTVectorStoreIndex complete.")
+            self.index = VectorStoreIndex.from_documents(self.documents)
+
+    def load_documents_from_source(self):
+        source_dir = os.path.join(self.path, "source")
+        if not os.path.isdir(source_dir):
+            return False
+
+        source_files = sorted(
+            file_name for file_name in os.listdir(source_dir)
+            if file_name.lower().endswith(".txt")
+        )
+        if not source_files:
+            return False
+
+        source_path = os.path.join(source_dir, source_files[0])
+        with open(source_path, "r", encoding="utf-8") as source_file:
+            transcript_text = source_file.read().strip()
+
+        if not transcript_text:
+            return False
+
+        self.documents = [Document(text=transcript_text)]
+        self.ytb_content = transcript_text
+        self.ytb_content_valid = True
+        return True
 
     def save_index(self):
         self.index.storage_context.persist(persist_dir=self.persist_dir)
         print(f"Index saved in path {self.persist_dir}.")
 
     def load_index(self):
-        storage_context = StorageContext.from_defaults(persist_dir=self.persist_dir)
-        self.index = load_index_from_storage(storage_context)
+        try:
+            storage_context = StorageContext.from_defaults(persist_dir=self.persist_dir)
+            self.index = load_index_from_storage(storage_context)
+        except Exception:
+            self.index = None
+
+        if self.index is None and self.load_documents_from_source():
+            self.create_vector_store()
+            if self.index is not None:
+                self.save_index()
 
     def start_query_engine(self):
         self.query_engine = self.index.as_query_engine()

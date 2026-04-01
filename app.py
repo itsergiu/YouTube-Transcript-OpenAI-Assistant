@@ -90,14 +90,15 @@ def f_generate_response(question):
 
 
 def f_validate_password(_api_key):
-    if util_set.openai_psw_check(_api_key)[0]:  # password valid
+    is_valid, error_message = util_set.openai_psw_check(_api_key)
+    if is_valid:  # password valid
         os.environ["OPENAI_API_KEY"] = _api_key
         st.session_state['openai_api_key_valid'] = True
         st.session_state['openai_api_key_err'] = None
         st.session_state['open_ai_key_status'] = 'OpenAI API key is valid'
     else:
         st.session_state['openai_api_key_valid'] = False
-        st.session_state['openai_api_key_err'] = util_set.openai_psw_check(_api_key)[1]
+        st.session_state['openai_api_key_err'] = error_message
         st.session_state['open_ai_key_status'] = 'OpenAI API key is not valid'
 
 
@@ -117,8 +118,9 @@ def f_embed_button():
 
         if lct.index is not None:
             st.session_state['embedded'] = True
-
-        lct.start_query_engine()
+            lct.start_query_engine()
+        else:
+            st.session_state['index_status'] = 'Index could not be created or loaded.'
 
 
 def f_estimate_costs():

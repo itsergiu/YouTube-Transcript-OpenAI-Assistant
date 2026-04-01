@@ -1,8 +1,8 @@
 # utility_settings
 import pandas as pd
-import openai
 import json
 import time
+from openai import OpenAI
 
 
 class SelectionValueGetter:
@@ -44,16 +44,13 @@ class SaveChat:
 
 
 def openai_psw_check(_psw):
-    openai.api_key = _psw
     _valid = None
     _err = None
     try:
-        response = openai.ChatCompletion.create(
-          model="gpt-3.5-turbo",
-          messages=[
-                {"role": "system", "content": "Hi OpenAI!"},
-                {"role": "user", "content": "Hi!"},
-            ]
+        client = OpenAI(api_key=_psw)
+        client.responses.create(
+            model="gpt-4o-mini",
+            input="Hi!"
         )
         _valid = True
     except Exception as e:
