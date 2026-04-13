@@ -2,7 +2,6 @@ import os
 from llama_index.core import Document, Settings, StorageContext, VectorStoreIndex, load_index_from_storage
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
-import requests
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import (
     NoTranscriptFound,
@@ -10,7 +9,6 @@ from youtube_transcript_api._errors import (
     VideoUnavailable,
 )
 from urllib.parse import parse_qs, urlparse
-from yt_dlp import YoutubeDL
 
 import logging
 import sys
@@ -24,7 +22,7 @@ logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 # There are five standard levels for logging in Python, listed here in increasing order of severity:
 # DEBUG: Detailed information, typically of interest only when diagnosing problems.
 # INFO: Confirmation that things are working as expected.
-# WARNING: An indication that something unexpected happened or indicative of some problem in the near future (e.g., ‘disk space low’). The software is still working as expected.
+# WARNING: An indication that something unexpected happened or indicative of some problem in the near future (e.g., 'disk space low'). The software is still working as expected.
 # ERROR: Due to a more serious problem, the software has not been able to perform some function.
 # CRITICAL: A very serious error, indicating that the program itself may be unable to continue running.
 
@@ -115,80 +113,18 @@ class LlamaContext:
             self.extract_error = str(exc)
 
     def _fetch_transcript(self, video_id):
-        try:
-            if hasattr(YouTubeTranscriptApi, "get_transcript"):
-                return YouTubeTranscriptApi.get_transcript(video_id)
+        if hasattr(YouTubeTranscriptApi, "get_transcript"):
+            return YouTubeTranscriptApi.get_transcript(video_id)
 
-            api = YouTubeTranscriptApi()
+        api = YouTubeTranscriptApi()
 
-            if hasattr(api, "fetch"):
-                return api.fetch(video_id)
+        if hasattr(api, "fetch"):
+            return api.fetch(video_id)
 
-            if hasattr(api, "get_transcript"):
-                return api.get_transcript(video_id)
-        except Exception:
-            return self._fetch_transcript_with_ytdlp(video_id)
+        if hasattr(api, "get_transcript"):
+            return api.get_transcript(video_id)
 
-        return self._fetch_transcript_with_ytdlp(video_id)
-
-    def _fetch_transcript_with_ytdlp(self, video_id):
-        video_url = f"https://www.youtube.com/watch?v={video_id}"
-        info = YoutubeDL(
-            {"skip_download": True, "quiet": True, "no_warnings": True}
-        ).extract_info(video_url, download=False)
-
-        captions = info.get("subtitles") or {}
-        automatic_captions = info.get("automatic_captions") or {}
-        track = self._pick_caption_track(captions) or self._pick_caption_track(automatic_captions)
-
-        if not track:
-            raise NoTranscriptFound(video_id, [], None)
-
-        response = requests.get(track["url"], timeout=30)
-        response.raise_for_status()
-
-        if track.get("ext") != "json3":
-            raise RuntimeError(f"Unsupported subtitle format for fallback: {track.get('ext')}")
-
-        payload = response.json()
-        events = payload.get("events") or []
-        transcript = []
-        for event in events:
-            text = self._extract_runs_text(event)
-            if not text:
-                continue
-            start_ms = int(event.get("tStartMs", 0))
-            duration_ms = int(event.get("dDurationMs", 0))
-            transcript.append(
-                {
-                    "start": start_ms / 1000,
-                    "duration": duration_ms / 1000,
-                    "text": text,
-                }
-            )
-        return transcript
-
-    def _pick_caption_track(self, captions):
-        preferred_languages = ["en", "en-US", "en-GB"]
-        for language in preferred_languages:
-            tracks = captions.get(language)
-            if tracks:
-                json_track = next((track for track in tracks if track.get("ext") == "json3"), None)
-                return json_track or tracks[0]
-
-        for language, tracks in captions.items():
-            if language == "live_chat":
-                continue
-            if tracks:
-                json_track = next((track for track in tracks if track.get("ext") == "json3"), None)
-                return json_track or tracks[0]
-
-        return None
-
-    def _extract_runs_text(self, segment):
-        runs = segment.get("segs") or []
-        text = "".join(str(run.get("utf8", "")) for run in runs)
-        return text.replace("\n", " ").strip()
+        raise AttributeError("Unsupported youtube_transcript_api version.")
 
     def _transcript_to_text(self, transcript):
         if transcript is None:
@@ -291,5 +227,3 @@ class LlamaContext:
         self.total_tokens = total_tokens
         self.total_cost_ada = total_cost_ada
         self.total_cost_davinci = total_cost_davinci
-
-
