@@ -8,5 +8,5 @@ llama-index==0.12.30
 requests==2.32.3
 youtube_transcript_api==0.6.2
 yt-dlp==2026.3.17
-setuptools==70.0.0
+setuptools==83.0.0
 
